@@ -59,15 +59,35 @@ async function handleLogin() {
   const password = document.getElementById('login-password').value;
   const err = document.getElementById('login-error');
 
-  const data = await api('/login', 'POST', { username, password, role: selectedRole });
-  if (!data) { err.textContent = 'Invalid credentials'; err.classList.remove('hidden'); return; }
-  
-  err.classList.add('hidden');
-  localStorage.setItem('srb_token', data.token);
-  localStorage.setItem('srb_user', JSON.stringify(data.user));
-  currentUser = data.user;
-  TOKEN = data.token;
-  initApp();
+  try {
+    const data = await api('/login', 'POST', { username, password, role: selectedRole });
+    if (!data) { 
+      err.textContent = 'Server did not respond.'; 
+      err.classList.remove('hidden'); 
+      return; 
+    }
+    
+    // If API returns an error message, show it specifically
+    if (data.msg) {
+        err.textContent = data.msg; 
+        err.classList.remove('hidden'); 
+        return;
+    }
+
+    // Success
+    err.classList.add('hidden');
+    localStorage.setItem('srb_token', data.token);
+    localStorage.setItem('srb_user', JSON.stringify(data.user));
+    currentUser = data.user;
+    TOKEN = data.token;
+    initApp();
+    
+  } catch (e) {
+    // This catches network errors or 500 errors
+    console.error(e);
+    err.textContent = 'Connection error or Server down.';
+    err.classList.remove('hidden');
+  }
 }
 
 async function handleRegister() {
