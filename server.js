@@ -159,3 +159,37 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ====== DATABASE CONNECTION & SEEDING ======
+const createDefaultUsers = async () => {
+  try {
+    const count = await User.countDocuments();
+    if (count === 0) {
+      console.log('No users found. Creating default users...');
+      
+      const hashedStudent = await bcrypt.hash('student123', 10);
+      const hashedAdmin = await bcrypt.hash('admin123', 10);
+
+      await User.create([
+        { username: 'student', password: hashedStudent, role: 'student', name: 'Student Demo' },
+        { username: 'admin', password: hashedAdmin, role: 'admin', name: 'Admin Demo' }
+      ]);
+      
+      console.log('Default users created! You can now login.');
+    }
+  } catch (err) {
+    console.error('Error seeding users:', err);
+  }
+};
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Connected');
+    createDefaultUsers(); // RUN THE USER CREATION
+  })
+  .catch(err => console.error(err));
+
+// ====== SERVE FRONTEND ======
+app.use(express.static(path.join(__dirname, 'public')));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
