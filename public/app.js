@@ -1,5 +1,5 @@
 // ===== API HELPER =====
-const API = '/api';
+const API = '/api'; // Relative path works if hosted on same domain
 let TOKEN = localStorage.getItem('srb_token');
 
 async function api(endpoint, method = 'GET', body = null, isFile = false) {
@@ -13,14 +13,21 @@ async function api(endpoint, method = 'GET', body = null, isFile = false) {
 
   try {
     const res = await fetch(`${API}${endpoint}`, config);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.msg || 'Error');
+    
+    // Handle cases where response is not JSON (like HTML error pages)
+    const isJson = res.headers.get('content-type')?.includes('application/json');
+    const data = isJson ? await res.json() : { msg: await res.text() };
+
+    if (!res.ok) {
+        console.error("API Error:", data);
+        throw new Error(data.msg || `Server Error: ${res.status}`);
+    }
+    
     return data;
   } catch (err) {
-    console.error(err);
-    // If unauthorized, force logout
-    if (err.message.includes('token') || err.message.includes('Unauthorized')) handleLogout();
-    return null;
+    console.error("Network/Code Error:", err);
+    // Re-throw so the calling function knows it failed
+    throw err; 
   }
 }
 
