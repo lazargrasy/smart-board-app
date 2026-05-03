@@ -96,35 +96,29 @@ async function handleRegister() {
   const password = document.getElementById('login-password').value;
   const err = document.getElementById('login-error');
 
-  // Basic validation
-  if (!name || !username || !password) {
-    err.textContent = 'Please fill all fields';
-    err.classList.remove('hidden');
-    return;
+  const data = await api('/register', 'POST', { name, username, password, role: selectedRole });
+  
+  // UPDATED ERROR HANDLING
+  if (!data) { 
+    err.textContent = 'Registration failed (Check console for details)'; 
+    err.classList.remove('hidden'); 
+    return; 
   }
-
-  try {
-    const data = await api('/register', 'POST', { name, username, password, role: selectedRole });
-    
-    if (!data) {
-      // This block runs if api() returned null (likely a 400 Bad Request)
-      err.textContent = 'Registration failed. Check console (F12) for details.';
+  
+  // If data exists but has a msg (error from backend)
+  if (data.msg) {
+      err.textContent = data.msg; // This will show "User exists"
       err.classList.remove('hidden');
       return;
-    }
-
-    // Success
-    localStorage.setItem('srb_token', data.token);
-    localStorage.setItem('srb_user', JSON.stringify(data.user));
-    currentUser = data.user;
-    TOKEN = data.token;
-    initApp();
-
-  } catch (e) {
-    console.error(e);
-    err.textContent = 'An error occurred. Check console (F12).';
-    err.classList.remove('hidden');
   }
+
+  // Success
+  localStorage.setItem('srb_token', data.token);
+  localStorage.setItem('srb_user', JSON.stringify(data.user));
+  currentUser = data.user;
+  TOKEN = data.token;
+  initApp();
+}
 }
 
 function handleLogout() {
