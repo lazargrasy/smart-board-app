@@ -95,15 +95,36 @@ async function handleRegister() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const err = document.getElementById('login-error');
-  
-  const data = await api('/register', 'POST', { name, username, password, role: selectedRole });
-  if (!data) { err.textContent = 'Error creating account'; err.classList.remove('hidden'); return; }
 
-  localStorage.setItem('srb_token', data.token);
-  localStorage.setItem('srb_user', JSON.stringify(data.user));
-  currentUser = data.user;
-  TOKEN = data.token;
-  initApp();
+  // Basic validation
+  if (!name || !username || !password) {
+    err.textContent = 'Please fill all fields';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  try {
+    const data = await api('/register', 'POST', { name, username, password, role: selectedRole });
+    
+    if (!data) {
+      // This block runs if api() returned null (likely a 400 Bad Request)
+      err.textContent = 'Registration failed. Check console (F12) for details.';
+      err.classList.remove('hidden');
+      return;
+    }
+
+    // Success
+    localStorage.setItem('srb_token', data.token);
+    localStorage.setItem('srb_user', JSON.stringify(data.user));
+    currentUser = data.user;
+    TOKEN = data.token;
+    initApp();
+
+  } catch (e) {
+    console.error(e);
+    err.textContent = 'An error occurred. Check console (F12).';
+    err.classList.remove('hidden');
+  }
 }
 
 function handleLogout() {
